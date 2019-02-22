@@ -30,7 +30,9 @@ server.error, server.debug, etc. are now available via spi.error,
 spi.debug, or can be obtained from the 'pllua.elog' package via
 require().  If you want, you can do:
 
-        pllua.on_common_init='server = require "pllua.elog"'
+```lua
+pllua.on_common_init='server = require "pllua.elog"'
+```
 
 to restore the previous behavior.
 
@@ -41,7 +43,9 @@ COMPATIBILITY WITH 1.x (old pllua)
 This version permits a degree of compatibility with pllua 1.x via
 the following setting:
 
-        pllua.on_common_init='require "pllua.compat"'
+```lua
+pllua.on_common_init='require "pllua.compat"'
+```
 
 This creates the server.* namespace with functions that match the 1.x
 calling conventions (e.g. passing args as tables). It also creates
@@ -97,23 +101,27 @@ output to the server log as LOG: messages.
 The on_init string can now access the trusted.allow() functionality,
 but only by doing an explicit require 'pllua.trusted'. e.g.
 
-      local t = require 'pllua.trusted'
-      t.allow{ "lpeg", "re" }
+```lua
+local t = require 'pllua.trusted'
+t.allow{ "lpeg", "re" }
+```
 
 SPI functionality is now in global table spi and has different calling
 conventions:
 
-      spi.execute("query text", arg, arg, ...)
-      spi.execute_count("query text", maxrows, arg, arg, ...)
-      spi.prepare("query text", {argtypes}, [{options}])
-        - returns a statement object:
-          s:execute(arg, arg, ...)  - returns a result table
-          s:execute_count(maxrows, arg, arg, ...)  - returns a result table
-          s:rows(arg, arg, ...) - returns iterator
-          s:numargs() - returns integer
-          s:argtype(argnum) - returns typeinfo
-      spi.rows("query text", args...)
-        - returns iterator
+```lua
+spi.execute("query text", arg, arg, ...)
+spi.execute_count("query text", maxrows, arg, arg, ...)
+spi.prepare("query text", {argtypes}, [{options}])
+  - returns a statement object:
+    s:execute(arg, arg, ...)  - returns a result table
+    s:execute_count(maxrows, arg, arg, ...)  - returns a result table
+    s:rows(arg, arg, ...) - returns iterator
+    s:numargs() - returns integer
+    s:argtype(argnum) - returns typeinfo
+spi.rows("query text", args...)
+  - returns iterator
+```
 
 Execution now returns a table with no number keys (#t == 0) in the
 event of no matching rows, whereas the old version returned nil. The
@@ -121,12 +129,14 @@ result is also currently a plain table, not an object.
 
 spi.prepare takes an options table with these possible values:
 
-      scroll = true or false
-      no_scroll = true
-      fast_start = true
-      custom_plan = true
-      generic_plan = true
-      fetch_count = integer
+```lua
+scroll = true or false
+no_scroll = true
+fast_start = true
+custom_plan = true
+generic_plan = true
+fetch_count = integer
+```
 
 Note that "scroll" and "no_scroll" are independent options to the
 planner, but we treat { scroll = false } as if it were { no_scroll = true }
@@ -137,15 +147,17 @@ large rows, or a value of 1 disables prefetch entirely.)
 
 Cursors work:
 
-      spi.findcursor("name")   - find already-open portal by name
-      spi.newcursor(["name"])  - find existing cursor or create new one
-      s:getcursor(args)   - get cursor from statement (can't specify name)
-      c:open(stmt,args)   - open a cursor
-      c:open(query,args)  - open a cursor
-      c:isopen()          - is it open
-      c:name()
-      c:fetch([n, [dir]])  - fetch n rows in dir (default: forward 1)
-      c:move([n, [dir]])
+```lua
+spi.findcursor("name")   - find already-open portal by name
+spi.newcursor(["name"])  - find existing cursor or create new one
+s:getcursor(args)   - get cursor from statement (can't specify name)
+c:open(stmt,args)   - open a cursor
+c:open(query,args)  - open a cursor
+c:isopen()          - is it open
+c:name()
+c:fetch([n, [dir]])  - fetch n rows in dir (default: forward 1)
+c:move([n, [dir]])
+```
 
 There can only be one cursor object for a given open portal - doing a
 findcursor on an existing cursor will always return the same object.
@@ -173,19 +185,25 @@ to spi.error(...) and so on.
 
 spi.error() and friends can take optional args:
 
-      spi.error('message')
-      spi.error('sqlstate', 'message')
-      spi.error('sqlstate', 'message', 'detail')
-      spi.error('sqlstate', 'message', 'detail', 'hint')
-      spi.error({ sqlstate = ?,
-                  message = ?,
-                  detail = ?,
-                  hint = ?,
-                  table = ?,
-                  column = ?, ...})
+```lua
+spi.error('message')
+spi.error('sqlstate', 'message')
+spi.error('sqlstate', 'message', 'detail')
+spi.error('sqlstate', 'message', 'detail', 'hint')
+spi.error({ sqlstate = ?,
+            message = ?,
+            detail = ?,
+            hint = ?,
+            table = ?,
+            column = ?, ...})
+```
 
 Sqlstates can be given either as 5-character strings or as the string
-names used in plpgsql: spi.error('invalid_argument', 'message')
+names used in plpgsql:
+
+```lua
+spi.error('invalid_argument', 'message')
+```
 
 Subtransactions are implemented via pcall() and xpcall(), which now
 run the called function in a subtransaction. In the case of xpcall,
@@ -198,8 +216,10 @@ subject to change if I decide it was a bad idea.)
 
 e.g.
 
-      local ok,err = pcall(function() --[[ do stuff in subxact ]] end)
-      if not ok then print("subxact failed with error",err) end
+```lua
+local ok,err = pcall(function() --[[ do stuff in subxact ]] end)
+if not ok then print("subxact failed with error",err) end
+```
 
 Currently there's also an lpcall function which does NOT create
 subtransactions, but which will catch only Lua errors and not PG
@@ -216,47 +236,55 @@ only affect themselves.
 Type handling is all different. The global fromstring() is replaced by
 the pgtype package/function:
 
-      pgtype(d)
-        -- if d is a pg datum value, returns an object representing its
-           type
+```lua
+pgtype(d)
+  -- if d is a pg datum value, returns an object representing its
+     type
 
-      pgtype(d,n)
-        -- if d is a datum, as above; if not, returns the object
-           describing the type of argument N of the function, or the
-           return type of the function if N==0
+pgtype(d,n)
+  -- if d is a datum, as above; if not, returns the object
+     describing the type of argument N of the function, or the
+     return type of the function if N==0
 
-      pgtype['typename']
-      pgtype.typename
-      pgtype(nil, 'typename')
-        -- parse 'typename' as an SQL type and return the object for it
+pgtype['typename']
+pgtype.typename
+pgtype(nil, 'typename')
+  -- parse 'typename' as an SQL type and return the object for it
 
-      pgtype.array.typename
-      pgtype.array['typename']
-        -- return the type for "typename[]" if it exists
+pgtype.array.typename
+pgtype.array['typename']
+  -- return the type for "typename[]" if it exists
+```
 
 The object representing a type can then be called as a constructor for
 datum objects of that type:
 
-      pgtype['mytablename'](col1,col2,col3)
-      pgtype['mytablename']({ col1 = val1, col2 = val2, col3 = val3})
-      pgtype.numeric(1234)
-      pgtype.date('2017-12-01')
-      pgtype.array.integer(1,2,3,4)
-      pgtype.array.integer({1,2,3,4}, 4)        -- dimension mandatory
-      pgtype.array.integer({{1,2},{3,4}},2,2)   -- dimensions mandatory
-      pgtype.numrange(1,2)        -- range type constructor
-      pgtype.numrange(1,2,'[]')   -- range type constructor
+```lua
+pgtype['mytablename'](col1,col2,col3)
+pgtype['mytablename']({ col1 = val1, col2 = val2, col3 = val3})
+pgtype.numeric(1234)
+pgtype.date('2017-12-01')
+pgtype.array.integer(1,2,3,4)
+pgtype.array.integer({1,2,3,4}, 4)        -- dimension mandatory
+pgtype.array.integer({{1,2},{3,4}},2,2)   -- dimensions mandatory
+pgtype.numrange(1,2)        -- range type constructor
+pgtype.numrange(1,2,'[]')   -- range type constructor
+```
 
 or the :fromstring method can be used:
 
-      pgtype.date:fromstring('string')
+```lua
+pgtype.date:fromstring('string')
+```
 
 In turn, datum objects of composite type can be indexed by column
 number or name:
 
-      row.foo  -- value of column "foo"
-      row[3]   -- note this is attnum=3, which might not be the third
-                  column if columns have been dropped
+```lua
+row.foo  -- value of column "foo"
+row[3]   -- note this is attnum=3, which might not be the third
+         -- column if columns have been dropped
+```
 
 Arrays can be indexed normally as a[1] or a[3][6] etc. By default
 array indexes in PG start at 1, but values starting at other indexes
@@ -270,7 +298,9 @@ tostring() works on any datum and returns its string representation.
 pairs() works on a composite datum (and actually returns the attnum as a
 third result):
 
-      for colname,value,attnum in pairs(row) do ...
+```lua
+for colname,value,attnum in pairs(row) do ...
+```
 
 The result is always in column order.
 
@@ -280,19 +310,21 @@ a null value or dropped column.
 Arrays, composite types, and jsonb values support a mapping operation
 controlled by a configuration table:
 
-      rowval{ map = function(colname,value,attno,row) ... return value end,
-              null = (any value, default nil),
-              discard = (boolean, default false)
-            }
-      arrayval{ map = function(elem,array,i,j,k...) ... return elem end,
-                null = (any value, default nil),
-                discard = (boolean, default false)
-              }
-      jsonbval{ map = function(key,val,...) ... return key,val end,
-                null = (any value, default nil),
-                discard = (boolean, default false),
-                pg_numeric = (boolean, default false)
-              }
+```lua
+rowval{ map = function(colname,value,attno,row) ... return value end,
+        null = (any value, default nil),
+        discard = (boolean, default false)
+      }
+arrayval{ map = function(elem,array,i,j,k...) ... return elem end,
+          null = (any value, default nil),
+          discard = (boolean, default false)
+        }
+jsonbval{ map = function(key,val,...) ... return key,val end,
+          null = (any value, default nil),
+          discard = (boolean, default false),
+          pg_numeric = (boolean, default false)
+        }
+```
 
 The result in all cases is returned as a Lua table, not a datum,
 unless the "discard" option was given as true, in which case no
@@ -321,20 +353,24 @@ Lua nil, then the entry will be omitted from the result.)
 
 As a convenience shorthand, these work:
 
-      d(nvl)   -> d{null = nvl}
-      d(func)  -> d{map = func}
-      d()      -> d{}
+```lua
+d(nvl)   -> d{null = nvl}
+d(func)  -> d{map = func}
+d()      -> d{}
+```
 
 Jsonb supports an inverse mapping operation for construction of json
 values from lua data:
 
-      pgtype.jsonb(value,
-                   { map = function(val) ... return val end,
-                     null = (any value, default nil),
-                     empty_object = (boolean, default false)
-                     array_thresh = (integer, default 1000)
-                     array_frac = (integer, default 1000)
-                   }
+```lua
+pgtype.jsonb(value,
+             { map = function(val) ... return val end,
+               null = (any value, default nil),
+               empty_object = (boolean, default false)
+               array_thresh = (integer, default 1000)
+               array_frac = (integer, default 1000)
+             }
+```
 
 "value" can be composed of any combination of (where "collection"
 means a value which is either a table or possesses a __pairs
@@ -375,13 +411,15 @@ and is not passed any path information.
 
 Range types support the following pseudo-columns (immutable):
 
-      r.lower
-      r.upper
-      r.lower_inc
-      r.upper_inc
-      r.lower_inf
-      r.upper_inf
-      r.isempty
+```lua
+r.lower
+r.upper
+r.lower_inc
+r.upper_inc
+r.lower_inf
+r.upper_inf
+r.isempty
+```
 
 Function arguments are converted to simple Lua values in the case of:
 
@@ -427,7 +465,9 @@ call returns values, those are treated as the (only) result row.
 Trigger functions no longer have a global "trigger" object, but rather
 are compiled with the following definition:
 
-      function(trigger,old,new,...) --[[ body here ]] end
+```lua
+function(trigger,old,new,...) --[[ body here ]] end
+```
 
 "trigger" is now a userdata, not a table, but can be indexed as
 before.  Trigger functions may assign a row to trigger.row, or modify
